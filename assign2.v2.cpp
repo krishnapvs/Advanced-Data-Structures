@@ -2,19 +2,17 @@
 #include <iostream>
 #include <sys/time.h>
 #include <cstdio>
+#include <string>
 #include <vector>
 #include <algorithm>
 using namespace std;
 
-long rec_off;
-// struture to hold index 
+long rec_off;// struture to hold index 
 typedef struct 
 { 
 	int key; /* Record's key */ 
 	long off; /* Record's offset in file */ 
 } index_S; 
-
-
 // structure to hold availability list
 typedef struct 
 { 
@@ -22,12 +20,27 @@ typedef struct
 	long off; /* Hole's offset in file */ 
 } avail_S;
 
+int add()
+{
+	return 0;
+}
 
-int main()
+int del()
+{
+	return 0;
+}
+
+int find()
+{
+	return 0;
+}
+
+int main(int argc, char *argv[])
 {
 	index_S dummy;// variable to load the data from file to the sturct
 	avail_S dummy2;
 	char *buf;
+	string command ="Not END";
 	long rec_off;
 	int rec_siz;
 	FILE *fp_index; /* Output file stream */ 
@@ -55,7 +68,7 @@ int main()
 			buf[ rec_siz ] = '\0'; 
 			// reading the input from the file index to the array of structs index
 			fp_index=fopen("index","r+b");
-			while(!feof(fp_index));
+			while(!feof(fp_index))
 			{
 				fread(&dummy,sizeof(index_S),1,fp_index);
 				index_list[indexend]=dummy;
@@ -64,15 +77,44 @@ int main()
 			
 			// reading the input from the file availibility to the array of structs avail
 			fp_avail=fopen("availibility","r+b");
-			while(!feof(fp_avail));
+			while(!feof(fp_avail))
 			{
 				fread(&dummy2,sizeof(avail_S),1,fp_avail);
 				avail_list[availend]=dummy2;
 				availend++;
 			}
-
-
-
 		}
+	
+	cin >> command; //reads command from the user
+	while(!command.compare("end"))
+	{
+		if (command.find("add")==0)
+			add();
+		else if (command.find("find")==0)
+			find();
+		else if(command.find("del")==0)
+			del();
+		else 
+			cout << "Command not found" << "\n" << "Please enter a valid command";
+		cin >> command; //reads command from the user
+	}
+
+	fp_index=fopen("index","r+b"); //writing the index file back to the disc
+	for (int i=0; i < indexend; i++)
+	{
+		dummy=index_list[i];
+		fwrite(&dummy,sizeof(index_S),1,fp_index);
+		i++;
+	}
+	fclose(fp_index);
+
+	fp_avail=fopen("availability","r+b"); // writing the availibility file back to the disc
+	for (int i=0; i < availend; i++)
+	{
+		dummy2=avail_list[i];
+		fwrite(&dummy2,sizeof(avail_S),1,fp_avail);
+		i++;
+	}
+	fclose(fp_avail);
 	
 }
