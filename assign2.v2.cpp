@@ -13,16 +13,46 @@ typedef struct
 	int key; /* Record's key */ 
 	long off; /* Record's offset in file */ 
 } index_S; 
-// structure to hold availability list
-typedef struct 
+
+typedef struct // structure to hold availability list
 { 
 	int size; /* Hole's size */ 
 	long off; /* Hole's offset in file */ 
 } avail_S;
 
-int add()
+bool binSearch(index_S *index, long key, int start, int end )
 {
-	return 0;
+	if (start >= end)
+		return false;
+
+	if(key==index[start+end/2].key)
+        return true;
+    else
+    {
+        if (key < index[end/2].key)
+        {
+        	return binSearch(index,key,start,end/2);
+        }
+        else
+        {
+        	return binSearch(index,key,end/2,end);
+        }
+    }
+}
+
+int add(FILE *fp_student, index_S* index_list, long key, int indexend)
+// function adds a new record if the record is not present in the file else prints record not added
+{
+	if (binSearch(index_list,key,0,indexend))
+	{
+		cout << "Record with SID=" << key << " exists";
+		return 0;
+	}
+	else
+	{
+
+	}
+	
 }
 
 int del()
@@ -84,12 +114,13 @@ int main(int argc, char *argv[])
 				availend++;
 			}
 		}
+	long key=command[2];
 	
 	cin >> command; //reads command from the user
 	while(!command.compare("end"))
 	{
 		if (command.find("add")==0)
-			add();
+			add(fp_student,index_list,indexend,key);
 		else if (command.find("find")==0)
 			find();
 		else if(command.find("del")==0)
@@ -98,7 +129,6 @@ int main(int argc, char *argv[])
 			cout << "Command not found" << "\n" << "Please enter a valid command";
 		cin >> command; //reads command from the user
 	}
-
 	fp_index=fopen("index","r+b"); //writing the index file back to the disc
 	for (int i=0; i < indexend; i++)
 	{
@@ -115,6 +145,5 @@ int main(int argc, char *argv[])
 		fwrite(&dummy2,sizeof(avail_S),1,fp_avail);
 		i++;
 	}
-	fclose(fp_avail);
-	
+	fclose(fp_avail);	
 }
