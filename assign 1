@@ -1,0 +1,374 @@
+#include <stdio.h>
+#include <iostream>
+#include <sys/time.h>
+#include <string.h>
+#include <cstdlib>
+#include <iomanip>
+
+using std::cout;
+
+
+
+typedef unsigned long long timestamp_t;
+
+static timestamp_t
+get_timestamp ()
+    {
+      struct timeval tm;
+      gettimeofday (&tm, NULL);
+      return  tm.tv_usec + (timestamp_t)tm.tv_sec * 1000000;
+    }
+struct timeval tm;
+
+void mem_lin(char* seek_file, char*key_file)
+{
+	FILE *inp; /* Input file stream */ 
+	int totalkey=0, totalseek=0; /* Keys to read */ 
+	int i, j, k, count=0;
+	int *seek, *key, *hit;
+	
+	//code to find the total count of numbers in seek
+	inp = fopen( seek_file, "rb" ); 
+	if (inp == NULL) exit(1);	 
+	fseek(inp, 0, SEEK_END);
+    totalseek = ftell(inp);
+    fclose(inp);
+    totalseek= totalseek/4;	
+
+	 seek = new int [totalseek];
+	 hit = new int [totalseek];
+	 for (i=0; i<totalseek; i++) hit[i]=0;
+	 
+
+	//Reading the data from seek.db to seek array
+
+	 inp = fopen( seek_file, "rb" ); 
+	 if (inp == NULL) exit(1);
+	 fread( seek, sizeof( int ), totalseek, inp );
+	 fclose(inp);
+   	 
+   	 //code to find the total count of keys
+	 inp = fopen( key_file, "rb" ); 
+	 if (inp == NULL) exit(1);	 
+	 fseek(inp,0,SEEK_END);
+	 totalkey=ftell(inp);
+	 fclose(inp);	
+	 totalkey=totalkey/4;
+	 key = new int [totalkey];
+
+
+	 //Reading the data from key.db to key array
+	 
+	timestamp_t t1 = get_timestamp();   	
+	 inp = fopen( key_file, "rb" ); 
+	 if (inp == NULL) exit(1);
+
+	 fread( key, sizeof( int ), totalkey, inp );
+	 
+	
+   	//checking if the value in seek is present in keys
+   	for (i=0; i < totalseek; i++)
+	{
+			for(j=0; j < totalkey; j++)
+	 		{
+	 			if (seek[i]==key[j])
+	 			{
+	 				hit[i]=1;
+	 				break;
+	 			}
+	 		}
+	 
+	}
+	timestamp_t t2=get_timestamp();
+	
+   	 fclose(inp);
+   	double microsecs = (t2-t1);
+   	for (i=0; i<totalseek;i++)
+	{
+		if (hit[i]==1)
+		{
+			cout << std::setw(12)<< seek[i] << ": Yes" <<std::endl;
+		}
+		else
+		{
+			cout <<std::setw(12)<< seek[i] << ": No" <<std::endl;
+		}
+	}
+	cout << "Time: " << (microsecs/1000000.0) << "\n";
+	
+	delete [] seek;
+   	delete [] key;
+   	delete [] hit;
+}
+
+void mem_bin(char* seek_file, char*key_file)
+{
+	FILE *inp; /* Input file stream */ 
+	int totalkey=0, totalseek=0; /* Keys to read */ 
+	int i, j, k, count=0;
+	int *seek, *key, *hit;
+	
+	//code to find the total count of numbers in seek
+	inp = fopen( seek_file, "rb" ); 
+	if (inp == NULL) exit(1);	 
+	fseek(inp, 0, SEEK_END);
+    totalseek = ftell(inp);
+    fclose(inp);
+    totalseek= totalseek/4;	
+
+	 seek = new int [totalseek];
+	 hit = new int [totalseek];
+	 for (i=0; i<totalseek; i++) hit[i]=0;
+	 
+
+	//Reading the data from seek.db to seek array
+
+	 inp = fopen( seek_file, "rb" ); 
+	 if (inp == NULL) exit(1);	 
+	 fread( seek, sizeof( int ), totalseek, inp );
+	 fclose(inp);
+   	 
+   	 //code to find the total count of keys
+	 inp = fopen( key_file, "rb" ); 
+	 if (inp == NULL) exit(1);	 
+	 fseek(inp,0,SEEK_END);
+	 totalkey=ftell(inp);
+	 fclose(inp);	
+	 totalkey=totalkey/4;
+	 key = new int [totalkey];
+
+
+	 //Reading the data from key.db to key array
+	 
+	timestamp_t t1 = get_timestamp();   	
+	 inp = fopen( key_file, "rb" ); 
+	 if (inp == NULL) exit(1);	 
+
+	 fread( key, sizeof( int ), totalkey, inp );
+	 
+	
+   	//checking if the value in seek is present in keys
+   	for (i=0;i<totalseek;i++)
+   	 {
+   	 int lo = 1, hi = totalkey, mid=0;
+   	 while (lo <= hi)
+   	 {
+       mid = lo + (hi-lo)/2;
+       if (key[mid] == seek[i])
+       {
+          hit[i]=1;
+          break;           
+       }
+       else if (key[mid] < seek[i]) 
+          lo = mid+1;
+       else
+          hi = mid-1;
+  	 }
+  	}
+	timestamp_t t2=get_timestamp();
+		
+   	 fclose(inp);
+   	double microsecs = (t2-t1);
+   	for (i=0; i<totalseek;i++)
+	{
+		if (hit[i]==1)
+		{
+			cout << std::setw(12)<< seek[i] << ": Yes" <<std::endl;
+		}
+		else
+		{
+			cout <<std::setw(12)<< seek[i] << ": No" <<std::endl;
+		}
+	}
+	cout << "Time: " << (microsecs/1000000.0) << "\n";
+	
+	delete [] seek;
+   	delete [] key;
+   	delete [] hit;
+
+}
+
+void disk_lin(char* seek_file, char*key_file)
+{
+	FILE *inp; /* Input file stream */ 
+	int totalkey=0, totalseek=0; /* Keys to read */ 
+	int i, j, k, count=0, key=0;
+	int *seek, *hit;
+	
+	//code to find the total count of numbers in seek
+	inp = fopen( seek_file, "rb" ); 
+	if (inp == NULL) exit(1);	 
+	fseek(inp, 0, SEEK_END);
+    totalseek = ftell(inp);
+    fclose(inp);
+    totalseek= totalseek/4;	
+
+	 seek = new int [totalseek];
+	 hit = new int [totalseek];
+	 for (i=0; i<totalseek; i++) hit[i]=0;
+	 
+
+	//Reading the data from seek.db to seek array
+
+	 inp = fopen( seek_file, "rb" ); 
+	 if (inp == NULL) exit(1);
+	 fread( seek, sizeof( int ), totalseek, inp );
+	 fclose(inp);
+   	 
+   	 //code to find the total count of keys
+	 inp = fopen( key_file, "rb" ); 
+	 if (inp == NULL) exit(1);	 
+	 fseek(inp,0,SEEK_END);
+	 totalkey=ftell(inp);
+	 fclose(inp);	
+	 totalkey=totalkey/4;
+	 //key = new int [totalkey];
+
+
+	inp = fopen( key_file, "rb" );
+	timestamp_t t1 = get_timestamp();   	
+	
+   	//checking if the value in seek is present in keys
+   	for (i=0; i < totalseek; i++)
+	{
+			
+			for(j=0; j < totalkey; j++)
+	 		{
+				fseek(inp,4*j,SEEK_SET);
+				fread( &key, sizeof( int ), 1, inp );
+				if (seek[i]==key)
+	 			{
+	 				hit[i]=1;
+	 				break;
+	 			}
+				
+	 		}
+	 
+	}
+	
+	timestamp_t t2=get_timestamp();
+	fclose(inp);	
+   	double microsecs = (t2-t1);
+   	for (i=0; i<totalseek;i++)
+	{
+		if (hit[i]==1)
+		{
+			cout << std::setw(12)<< seek[i] << ": Yes" <<std::endl;
+		}
+		else
+		{
+			cout <<std::setw(12)<< seek[i] << ": No" <<std::endl;
+		}
+	}
+	cout << "Time: " << (microsecs/1000000.0) << "\n";
+	
+	delete [] seek;
+   	
+   	delete [] hit;
+}
+
+void disk_bin(char* seek_file, char*key_file)
+{
+	FILE *inp; /* Input file stream */ 
+	int totalkey=0, totalseek=0; /* Keys to read */ 
+	int i, j, k, count=0, key=0;
+	int *seek, *hit;
+	
+	//code to find the total count of numbers in seek
+	inp = fopen( seek_file, "rb" ); 
+	if (inp == NULL) exit(1);	 
+	fseek(inp, 0, SEEK_END);
+    totalseek = ftell(inp);
+    fclose(inp);
+    totalseek= totalseek/4;	
+
+	seek = new int [totalseek];
+	hit = new int [totalseek];
+	for (i=0; i<totalseek; i++) hit[i]=0;
+	 
+
+	//Reading the data from seek.db to seek array
+
+	inp = fopen( seek_file, "rb" ); 
+	if (inp == NULL) exit(1);
+	fread( seek, sizeof( int ), totalseek, inp );
+	fclose(inp);
+   	 
+   	//code to find the total count of keys
+	inp = fopen( key_file, "rb" ); 
+	if (inp == NULL) exit(1);	 
+	fseek(inp,0,SEEK_END);
+	totalkey=ftell(inp);
+	fclose(inp);	
+	totalkey=totalkey/4;
+	//key = new int [totalkey];
+
+
+	inp = fopen( key_file, "rb" );
+	timestamp_t t1 = get_timestamp();   	
+	
+   	//checking if the value in seek is present in keys
+   	for (i=0; i < totalseek; i++)
+	{
+		int lo = 1, hi = totalkey, mid=0;
+		while (lo <= hi)
+		{
+		mid = lo + (hi-lo)/2;
+		fseek(inp,4*mid,SEEK_SET);
+		fread( &key, sizeof( int ), 1, inp );
+		if (key == seek[i])
+		{
+			hit[i]=1;
+			break;           
+		}
+		else if (key < seek[i]) 
+          lo = mid+1;
+		else
+          hi = mid-1;
+		} 
+	}
+	
+	timestamp_t t2=get_timestamp();
+	fclose(inp);	
+   	double microsecs = (t2-t1);
+   	for (i=0; i<totalseek;i++)
+	{
+		if (hit[i]==1)
+		{
+			cout << std::setw(12)<< seek[i] << ": Yes" <<std::endl;
+		}
+		else
+		{
+			cout <<std::setw(12)<< seek[i] << ": No" <<std::endl;
+		}
+	}
+	cout << "Time: " << (microsecs/1000000.0) << "\n";
+	
+	delete [] seek;
+   	
+   	delete [] hit;
+}
+
+int main(int argc,char **argv)
+{
+	if(argc != 4) {
+		printf("Need Four Arguments\n");
+		exit(1);
+	}
+	
+	if (strcmp(argv[1],"--mem-lin") == 0 ) {
+		mem_lin(argv[3],argv[2]);
+	}
+	else if(strcmp(argv[1],"--mem-bin") == 0 )	
+	{
+		mem_bin(argv[3],argv[2]);
+	}
+	else if(strcmp(argv[1],"--disk-lin") == 0 )	
+	{
+		disk_lin(argv[3],argv[2]);
+	}
+	else if(strcmp(argv[1],"--disk-bin") == 0 )	
+	{
+		disk_bin(argv[3],argv[2]);
+	}
+}
