@@ -6,6 +6,9 @@
 #include <algorithm>
 using namespace std;
 
+// Just a small part the whole of it is coming soon
+
+
 // struture to hold index 
 typedef struct 
 { 
